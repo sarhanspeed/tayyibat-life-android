@@ -1,0 +1,68 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build installable APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '8.13'
+          cache-provider: basic
+
+      - name: Verify Android SDK
+        shell: bash
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME}"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT}"
+          sdkmanager --version
+
+      - name: Install required Android packages
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Build debug APK
+        shell: bash
+        run: |
+          gradle :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Name APK using project version
+        id: version
+        shell: bash
+        run: |
+          VERSION_NAME="$(grep '^VERSION_NAME=' version.properties | cut -d= -f2 | tr -d '\r')"
+          echo "name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          mkdir -p release-output
+          cp app/build/outputs/apk/debug/app-debug.apk "release-output/TayyibatLife-v${VERSION_NAME}-install.apk"
+          sha256sum "release-output/TayyibatLife-v${VERSION_NAME}-install.apk" > "release-output/TayyibatLife-v${VERSION_NAME}-install.apk.sha256"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TayyibatLife-v${{ steps.version.outputs.name }}-APK
+          path: release-output/*
+          if-no-files-found: error
+          retention-days: 30
