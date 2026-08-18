@@ -1,27 +1,20 @@
 # Changelog
 
-## 3.0.0 — Professional Upgrade
-- Added real licensed workout photography, packaged offline in the APK with photo credits.
-- Expanded home workout library to 25+ beginner/intermediate/advanced exercises.
-- Added exercise detail coaching: form cues, common mistakes, easier/harder alternatives, sets/reps/time/rest.
-- Added guided active workout sessions and completion tracking.
-- Added progressive 7-day, 14-day and 30-day workout plans.
-- Added daily challenges, movement streaks, achievements/badges and shareable progress summaries.
-- Added professional onboarding with goals and profile setup.
-- Rebuilt the daily dashboard around calories, movement, water, weight, fasting and daily challenges.
-- Expanded the Tayyibat educational food guide using the currently published public guide; unclear classifications remain Needs Review instead of being guessed.
-- Added gram-based nutrition calculator with common serving weights and generic per-100g nutrition references.
-- Added ready meal logging plus custom meal logging.
-- Added daily weight tracking, body measurements, local before/after progress photos and visual trend chart.
-- Added intermittent fasting 12:12 / 14:10 / 16:8 / 18:6 / 20:4 with timer, history and stronger safety messaging.
-- Added sleep duration/quality tracking and mood/energy tracking.
-- Added a local Smart Coach that uses the user's daily data without sending it to an external AI service.
-- Added weekly health report, quick share, friend invite, and reminder screens.
-- Retained native ML Kit meal image scanning and barcode scanning flows.
-- Added light/dark mode and Arabic/English support across the new screens.
+## 3.1.0 — Tayyibat Intelligence Engine
+- Added a dedicated Tayyibat Intelligence hub based on a dated snapshot of the public altayebaat.com frequency guide.
+- Added 200 source entries with hundreds of searchable food names and aliases across basic, daily, weekly, occasional and forbidden categories.
+- Added explicit source-conflict handling: conflicting site classifications are marked Needs Review instead of being guessed.
+- Added “Can I have this today?” checks using the user’s local frequency history.
+- Added daily / weekly / monthly counters and special handling for the source guide’s fish and non-consecutive meat frequency rules.
+- Added a meal checker that parses comma/newline-separated ingredients and can calculate calories when gram weights match the existing local nutrition database.
+- Added source-derived forbidden-food alternatives for eggs, chicken, milk/fresh cheese, white flour/pasta and black tea.
+- Added a local 7-day Tayyibat meal-plan generator that avoids source-forbidden/conflicted items and supports 3 meals, 2 meals or an intermittent-fasting eating window.
+- Added a recipe browser with rule checks and frequency logging.
+- Added “My Tayyibat Journey” daily check-in with weight, sleep, digestion, energy and streak history.
+- Added a Tayyibat learning game with level mode (10 questions / 3 lives) and a 45-second speed mode.
+- Added a dedicated Intelligence overlay integrated with the existing v3.0 interface while retaining the v3.0 nutrition guide, workouts, fasting, weight, wellness, scanners, reports and bilingual UI.
 
-Safety / data notes:
-- Tayyibat food labels are educational system labels, not medical recommendations.
-- Nutrition values are generic references and vary by brand, recipe and preparation.
-- Exercise photos illustrate movements; exercise guidance is general and users should stop for sharp pain, dizziness or unusual symptoms.
-- Intermittent fasting is a timing tracker, not treatment. Pregnancy/breastfeeding, eating-disorder history, diabetes and medicines can require clinician guidance.
+Data / safety notes:
+- The Tayyibat engine is a source-system classification snapshot, not medical advice or a medical nutrition guideline.
+- Where pages on altayebaat.com disagree, the app shows Needs Review and the conflict explanation.
+- Nutrition values remain generic references and may vary by brand, recipe and preparation.
