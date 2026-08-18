@@ -31,6 +31,10 @@ import com.google.mlkit.vision.label.ImageLabel;
 import com.google.mlkit.vision.label.ImageLabeler;
 import com.google.mlkit.vision.label.ImageLabeling;
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions;
+import com.google.mlkit.vision.barcode.BarcodeScanner;
+import com.google.mlkit.vision.barcode.BarcodeScanning;
+import com.google.mlkit.vision.barcode.common.Barcode;
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -41,7 +45,8 @@ import java.io.ByteArrayOutputStream;
 public class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 501;
     private static final int NOTIFICATION_PERMISSION_REQUEST = 502;
-    private static final int CAMERA_REQUEST = 503;
+    private static final int CAMERA_MEAL_REQUEST = 503;
+    private static final int CAMERA_BARCODE_REQUEST = 504;
     private WebView webView;
     private ValueCallback<Uri[]> fileCallback;
 
@@ -94,6 +99,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
         if (requestCode == FILE_CHOOSER_REQUEST && fileCallback != null) {
             Uri[] results = null;
             if (resultCode == Activity.RESULT_OK && data != null) {
@@ -108,10 +114,10 @@ public class MainActivity extends Activity {
             fileCallback.onReceiveValue(results);
             fileCallback = null;
         }
-        if (requestCode == CAMERA_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.getExtras() != null) {
-            Object raw = data.getExtras().get("data");
-            if (raw instanceof Bitmap) {
-                Bitmap bitmap = (Bitmap) raw;
+
+        if (requestCode == CAMERA_MEAL_REQUEST && resultCode == Activity.RESULT_OK) {
+            Bitmap bitmap = getCameraBitmap(data);
+            if (bitmap != null) {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 88, out);
                 String base64 = Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
@@ -120,6 +126,21 @@ public class MainActivity extends Activity {
                         "window.onNativeCapturedMealPhoto(" + JSONObject.quote(dataUrl) + ")", null));
             }
         }
+
+        if (requestCode == CAMERA_BARCODE_REQUEST && resultCode == Activity.RESULT_OK) {
+            Bitmap bitmap = getCameraBitmap(data);
+            if (bitmap != null) {
+                scanBarcodeBitmap(bitmap);
+            } else {
+                sendBarcodeError("Could not read camera image");
+            }
+        }
+    }
+
+    private Bitmap getCameraBitmap(Intent data) {
+        if (data == null || data.getExtras() == null) return null;
+        Object raw = data.getExtras().get("data");
+        return raw instanceof Bitmap ? (Bitmap) raw : null;
     }
 
     @Override
@@ -136,7 +157,7 @@ public class MainActivity extends Activity {
                     "Tayyibat reminders / تذكيرات الطيبات",
                     NotificationManager.IMPORTANCE_DEFAULT
             );
-            channel.setDescription("Water, weight and daily plan reminders");
+            channel.setDescription("Water, weight, meal and workout reminders");
             nm.createNotificationChannel(channel);
         }
     }
@@ -152,6 +173,66 @@ public class MainActivity extends Activity {
             if (webView == null) return;
             webView.evaluateJavascript("window.onNativeMealScan(" + payload.toString() + ")", null);
         });
+    }
+
+    private void sendBarcodeResult(JSONObject payload) {
+        runOnUiThread(() -> {
+            if (webView == null) return;
+            webView.evaluateJavascript("window.onNativeBarcodeScan(" + payload.toString() + ")", null);
+        });
+    }
+
+    private void sendBarcodeError(String message) {
+        try {
+            JSONObject result = new JSONObject();
+            result.put("ok", false);
+            result.put("error", message == null ? "Barcode scan failed" : message);
+            sendBarcodeResult(result);
+        } catch (Exception ignored) { }
+    }
+
+    private void scanBarcodeBitmap(Bitmap bitmap) {
+        try {
+            BarcodeScannerOptions options = new BarcodeScannerOptions.Builder()
+                    .setBarcodeFormats(
+                            Barcode.FORMAT_EAN_13,
+                            Barcode.FORMAT_EAN_8,
+                            Barcode.FORMAT_UPC_A,
+                            Barcode.FORMAT_UPC_E,
+                            Barcode.FORMAT_CODE_128,
+                            Barcode.FORMAT_QR_CODE
+                    )
+                    .build();
+            BarcodeScanner scanner = BarcodeScanning.getClient(options);
+            InputImage image = InputImage.fromBitmap(bitmap, 0);
+            scanner.process(image)
+                    .addOnSuccessListener(barcodes -> {
+                        try {
+                            JSONObject result = new JSONObject();
+                            if (barcodes == null || barcodes.isEmpty()) {
+                                result.put("ok", false);
+                                result.put("error", "No barcode detected. Move closer and try again.");
+                            } else {
+                                Barcode first = barcodes.get(0);
+                                result.put("ok", true);
+                                result.put("value", first.getRawValue() == null ? "" : first.getRawValue());
+                                result.put("format", first.getFormat());
+                                result.put("count", barcodes.size());
+                            }
+                            sendBarcodeResult(result);
+                        } catch (Exception e) {
+                            sendBarcodeError(e.getMessage());
+                        } finally {
+                            scanner.close();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        scanner.close();
+                        sendBarcodeError(e.getMessage());
+                    });
+        } catch (Exception e) {
+            sendBarcodeError(e.getMessage());
+        }
     }
 
     public class NativeBridge {
@@ -174,18 +255,25 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public String getVersion() { return "2.0.12"; }
+        public String getVersion() { return BuildConfig.VERSION_NAME; }
 
         @JavascriptInterface
         public void captureMealPhoto() {
-            runOnUiThread(() -> {
-                Intent camera = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                if (camera.resolveActivity(getPackageManager()) != null) {
-                    startActivityForResult(camera, CAMERA_REQUEST);
-                } else {
-                    Toast.makeText(MainActivity.this, "Camera app not found / لا يوجد تطبيق كاميرا", Toast.LENGTH_SHORT).show();
-                }
-            });
+            runOnUiThread(() -> openCamera(CAMERA_MEAL_REQUEST));
+        }
+
+        @JavascriptInterface
+        public void captureBarcodePhoto() {
+            runOnUiThread(() -> openCamera(CAMERA_BARCODE_REQUEST));
+        }
+
+        private void openCamera(int requestCode) {
+            Intent camera = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            if (camera.resolveActivity(getPackageManager()) != null) {
+                startActivityForResult(camera, requestCode);
+            } else {
+                Toast.makeText(MainActivity.this, "Camera app not found / لا يوجد تطبيق كاميرا", Toast.LENGTH_SHORT).show();
+            }
         }
 
         @JavascriptInterface

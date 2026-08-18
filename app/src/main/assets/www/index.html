@@ -6,11 +6,12 @@
   <meta name="theme-color" content="#0f7a55" />
   <title>TAYYIBAT LIFE</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="v210.css" />
 </head>
 <body>
   <div id="app">
     <header class="topbar">
-      <div><div class="eyebrow">TAYYIBAT LIFE • V2</div><h1 id="pageTitle">الرئيسية</h1></div>
+      <div><div class="eyebrow">TAYYIBAT LIFE • V2.1</div><h1 id="pageTitle">الرئيسية</h1></div>
       <button class="icon-btn" id="profileQuickBtn" aria-label="الملف الشخصي">👤</button>
     </header>
     <main id="view" class="view"></main>
@@ -18,13 +19,14 @@
       <button data-route="home" class="nav-btn active"><span>🏠</span><b>الرئيسية</b></button>
       <button data-route="foods" class="nav-btn"><span>🔎</span><b>الأطعمة</b></button>
       <button data-route="meals" class="nav-btn"><span>🍽️</span><b>الوجبات</b></button>
-      <button data-route="progress" class="nav-btn"><span>📊</span><b>المتابعة</b></button>
+      <button data-route="workouts" class="nav-btn"><span>🏋️</span><b>التمارين</b></button>
       <button data-route="more" class="nav-btn"><span>☰</span><b>المزيد</b></button>
     </nav>
   </div>
   <div id="toast" class="toast" aria-live="polite"></div>
   <div id="modalRoot"></div>
   <script src="foods.js"></script>
+  <script src="workouts.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
