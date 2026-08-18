@@ -83,3 +83,5 @@ jobs:
             app/build/reports/**
           if-no-files-found: warn
           retention-days: 14
+
+# v2.1.0 verification trigger after BuildConfig fix
