@@ -21,6 +21,10 @@ android {
         versionName versionProps.getProperty('VERSION_NAME')
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     buildTypes {
         release {
             minifyEnabled false
