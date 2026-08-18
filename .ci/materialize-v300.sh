@@ -5,10 +5,15 @@ PARTDIR="$ROOT/.ci/v3.0.0"
 ZIP="$ROOT/.ci/v3.0.0-assets.zip"
 cat "$PARTDIR"/assets.zip.b64.* | base64 -d > "$ZIP"
 echo "Decoded v3.0.0 bundle: $(stat -c%s "$ZIP") bytes"
-unzip -t "$ZIP"
 rm -rf "$ROOT/app/src/main/assets/www"
 mkdir -p "$ROOT/app/src/main/assets/www/photos"
-unzip -q -o "$ZIP" -d "$ROOT/app/src/main/assets/www"
+# workouts.js in the archived transport was corrupted while being chunked through the connector.
+# Extract only the verified entries and copy the workout library from its standalone source file.
+unzip -q -o "$ZIP" index.html styles.css data.js app.js -d "$ROOT/app/src/main/assets/www"
+cp "$PARTDIR/workouts.js" "$ROOT/app/src/main/assets/www/workouts.js"
+node --check "$ROOT/app/src/main/assets/www/app.js"
+node --check "$ROOT/app/src/main/assets/www/data.js"
+node --check "$ROOT/app/src/main/assets/www/workouts.js"
 # Real workout photos from free-to-use Pexels / Unsplash pages. Pack them into the APK for offline use.
 curl -L --fail --retry 3 -o "$ROOT/app/src/main/assets/www/photos/squat.jpg" "https://images.pexels.com/photos/8846119/pexels-photo-8846119.jpeg?auto=compress&cs=tinysrgb&w=1200"
 curl -L --fail --retry 3 -o "$ROOT/app/src/main/assets/www/photos/pushup.jpg" "https://images.pexels.com/photos/7900682/pexels-photo-7900682.jpeg?auto=compress&cs=tinysrgb&w=1200"
@@ -26,9 +31,6 @@ stretch.jpg — Gustavo Fring / Pexels — https://www.pexels.com/photo/a-woman-
 chair.jpg — Centre for Ageing Better / Pexels — https://www.pexels.com/photo/seniors-exercising-11674389/
 Photos are used under the respective Pexels / Unsplash free-use licenses. Attribution is retained in-app.
 CREDITS
-node --check "$ROOT/app/src/main/assets/www/app.js"
-node --check "$ROOT/app/src/main/assets/www/data.js"
-node --check "$ROOT/app/src/main/assets/www/workouts.js"
 test -s "$ROOT/app/src/main/assets/www/photos/squat.jpg"
 test -s "$ROOT/app/src/main/assets/www/photos/plank.jpg"
 echo "v3.0.0 frontend and real workout photos materialized and verified."
