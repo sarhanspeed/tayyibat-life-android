@@ -28,7 +28,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ -f .ci/materialize-v300.sh ]; then
+          if [ -f .ci/materialize-v310.sh ]; then
+            bash .ci/materialize-v310.sh
+          elif [ -f .ci/materialize-v300.sh ]; then
             bash .ci/materialize-v300.sh
           elif [ -f .ci/materialize-v220.sh ]; then
             bash .ci/materialize-v220.sh
@@ -57,6 +59,9 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/aapt2" version
           test -f app/src/main/assets/www/photos/squat.jpg
           test -f app/src/main/assets/www/photos/plank.jpg
+          test -f app/src/main/assets/www/tayyibat-v310.js
+          grep -q 'tayyibat-v310.js' app/src/main/assets/www/index.html
+          grep -q 'TAYYIBAT LIFE • V3.1' app/src/main/assets/www/index.html
 
       - name: Build debug APK
         shell: bash
